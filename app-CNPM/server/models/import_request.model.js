@@ -26,7 +26,7 @@ const ImportRequest = {
 
   // Xác nhận nhận hàng (storekeeper): INSERT batches + UPDATE status + ghi log
   async receive(id, receiveData) {
-    const { batch_code, quantity, warehouse_id, expiry_date, note, position, status } = receiveData;
+    const { batch_code, quantity, expiry_date, note, position, status } = receiveData;
     const conn = await db.getConnection();
     try {
       await conn.beginTransaction();
@@ -40,9 +40,9 @@ const ImportRequest = {
 
       // INSERT batch mới
       const [batchResult] = await conn.query(
-        `INSERT INTO batches (medicine_id, batch_code, quantity, import_date, expiry_date, warehouse_id, position)
-         VALUES (?, ?, ?, NOW(), ?, ?, ?)`,
-        [req.medicine_id, batch_code, quantity, expiry_date, warehouse_id || 1, position]
+        `INSERT INTO batches (medicine_id, batch_code, quantity, import_date, expiry_date, position)
+         VALUES (?, ?, ?, NOW(), ?, ?)`,
+        [req.medicine_id, batch_code, quantity, expiry_date, position]
       );
       const batchId = batchResult.insertId;
 

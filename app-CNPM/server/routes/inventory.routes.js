@@ -13,10 +13,8 @@ router.get("/", async (req, res) => {
         m.name         AS productName,
         b.quantity,
         b.expiry_date  AS expiryDate,
-        w.name         AS warehouse,
         b.position,
         b.medicine_id,
-        b.warehouse_id,
         CASE
           WHEN b.expiry_date < NOW() THEN 'expired'
           WHEN b.expiry_date <= DATE_ADD(NOW(), INTERVAL 30 DAY) THEN 'near'
@@ -24,7 +22,6 @@ router.get("/", async (req, res) => {
         END AS status
       FROM batches b
       JOIN medicines m ON m.id = b.medicine_id
-      LEFT JOIN warehouses w ON w.id = b.warehouse_id
       WHERE b.quantity > 0
       ORDER BY b.expiry_date ASC
     `);

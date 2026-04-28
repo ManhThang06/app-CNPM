@@ -32,11 +32,9 @@ cron.schedule("0 8 * * *", async () => {
         m.name,
         b.batch_code,
         b.expiry_date,
-        b.quantity,
-        w.name AS warehouse_name
+        b.quantity
       FROM batches b
       JOIN medicines m ON m.id = b.medicine_id
-      LEFT JOIN warehouses w ON w.id = b.warehouse_id
       WHERE b.expiry_date <= DATE_ADD(NOW(), INTERVAL 6 MONTH)
         AND b.quantity > 0
       ORDER BY b.expiry_date ASC

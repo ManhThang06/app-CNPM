@@ -24,7 +24,6 @@ type Batch = {
   batchName: string;
   quantity: number;
   expiryDate: string;
-  warehouse: string;
   position: string;
   status: "safe" | "near" | "expired";
   medicine_id: number;
@@ -37,7 +36,6 @@ type InventoryApiBatch = {
   batch_code?: string;
   quantity: number;
   expiryDate?: string;
-  warehouse?: string;
   position?: string;
   status?: Batch["status"];
   medicine_id: number;
@@ -89,11 +87,10 @@ export default function InventoryPage() {
           id: b.id,
           productName: b.productName || "—",
           batchName: b.batchName || b.batch_code || "—",
-          quantity: b.quantity,
+          quantity: Number(b.quantity) || 0,
           expiryDate: b.expiryDate
             ? new Date(b.expiryDate).toISOString().split("T")[0]
             : "",
-          warehouse: b.warehouse || "—",
           position: b.position || "—",
           status:
             (b.status as "safe" | "near" | "expired") ||
@@ -131,7 +128,7 @@ export default function InventoryPage() {
       near = 0,
       expired = 0;
     filteredBatches.forEach((b) => {
-      totalQuantity += b.quantity;
+      totalQuantity += Number(b.quantity) || 0;
       if (b.status === "near") near++;
       if (b.status === "expired") expired++;
     });

@@ -112,7 +112,6 @@ export default function ImportRequestPage() {
       await receiveImportRequest(selected.id, {
         batch_code: selected.batch_code || "",
         quantity: quantity || selected.quantity || 1,
-        warehouse_id: "1",
         position: `F${floor}-${room}-${cabinet}`,
         expiry_date: selected.expiry_date || "",
         status,
@@ -152,8 +151,8 @@ export default function ImportRequestPage() {
             <tr>
               <th>Mã</th>
               <th>Ngày</th>
-              <th>Nguồn</th>
-              <th>Loại</th>
+              <th>Tên thuốc</th>
+              <th>Mã lô</th>
               <th>Tổng SL</th>
               <th>Trạng thái</th>
               <th>Thao tác</th>
@@ -167,19 +166,9 @@ export default function ImportRequestPage() {
                 <tr key={r.id}>
                   <td style={{ fontWeight: 700 }}>#{r.id}</td>
                   <td>{r.createdAt}</td>
-                  <td>
-                    <span
-                      className="pill"
-                      style={{
-                        background: r.source === "manager" ? "rgba(139,92,246,0.1)" : "rgba(59,130,246,0.1)",
-                        color: r.source === "manager" ? "#5b21b6" : "#1e40af",
-                      }}
-                    >
-                      {r.source === "manager" ? "QL kho" : "Người dùng"}
-                    </span>
-                  </td>
-                  <td>{r.type === "import" ? "Nhập kho" : "Hoàn trả"}</td>
-                  <td style={{ fontWeight: 600 }}>{getTotal(r.items)}</td>
+                  <td style={{ fontWeight: 600 }}>{r.medicine_name || "—"}</td>
+                  <td>{r.batch_code || "—"}</td>
+                  <td style={{ fontWeight: 600 }}>{r.quantity}</td>
                   <td>
                     <StatusPill 
                       status={r.status} 

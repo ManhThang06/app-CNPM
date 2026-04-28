@@ -27,7 +27,6 @@ const baseTables = [
       img_path VARCHAR(255),
       name VARCHAR(150) NOT NULL,
       description TEXT,
-      storage_type ENUM('NORMAL','COOL','COLD','SPECIAL') DEFAULT 'NORMAL',
       min_stock INT DEFAULT 0,
       max_stock INT DEFAULT 0,
       near_expiry_days INT DEFAULT 180,
@@ -39,16 +38,6 @@ const baseTables = [
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   },
   {
-    label: "CREATE warehouses",
-    sql: `CREATE TABLE IF NOT EXISTS warehouses (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(100) NOT NULL,
-      floor INT,
-      temperature FLOAT,
-      type ENUM('NORMAL','COOL','COLD','SPECIAL') DEFAULT 'NORMAL'
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-  },
-  {
     label: "CREATE batches",
     sql: `CREATE TABLE IF NOT EXISTS batches (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -57,12 +46,10 @@ const baseTables = [
       quantity INT NOT NULL,
       import_date DATE,
       expiry_date DATE,
-      warehouse_id INT,
       position VARCHAR(50),
       cabinet_is_full TINYINT(1) DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (medicine_id) REFERENCES medicines(id),
-      FOREIGN KEY (warehouse_id) REFERENCES warehouses(id)
+      FOREIGN KEY (medicine_id) REFERENCES medicines(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   },
   {
@@ -147,56 +134,6 @@ const seedStatements = [
         (4, 'Vitamin C 1000mg', 'Immune support supplement', '/uploads/VitaminC_1000mg.webp'),
         (5, 'Omeprazole 20mg', 'Stomach acid treatment', '/uploads/omeprazol_200mg.jpg')`,
   },
-  {
-    label: "SEED warehouses",
-    sql: `INSERT INTO warehouses (id, name, floor, temperature, type)
-      VALUES
-        (1, 'Kho A', 1, 25, 'NORMAL'),
-        (2, 'Kho B', 2, 18, 'COOL'),
-        (3, 'Kho C', 1, 5, 'COLD'),
-        (4, 'Kho D', 3, 15, 'SPECIAL')`,
-  },
-  {
-    label: "SEED batches",
-    sql: `INSERT INTO batches (id, medicine_id, batch_code, quantity, import_date, expiry_date, warehouse_id)
-      VALUES
-        (1, 1, 'PARA-2026-01', 1000, '2026-01-01', '2027-01-01', 1),
-        (2, 2, 'AMOX-2026-02', 500, '2026-02-10', '2027-02-10', 2),
-        (3, 3, 'IBU-2026-03', 800, '2026-03-05', '2027-03-05', 1),
-        (4, 4, 'VITC-2026-01', 1200, '2026-01-15', '2028-01-15', 3),
-        (5, 5, 'OME-2026-02', 600, '2026-02-20', '2027-02-20', 4)`,
-  },
-  {
-    label: "SEED import_requests",
-    sql: `INSERT INTO import_requests (id, medicine_id, batch_code, quantity, status, received_date)
-      VALUES
-        (1, 1, 'PARA-2026-01', 1000, 'RECEIVED', '2026-01-02'),
-        (2, 2, 'AMOX-2026-02', 500, 'PENDING', NULL),
-        (3, 3, 'IBU-2026-03', 800, 'RECEIVED', '2026-03-06')`,
-  },
-  {
-    label: "SEED export_requests",
-    sql: `INSERT INTO export_requests (id, requester_id, status, storekeeper_confirm, requester_confirm, handle_result, feedback_note, processed_date)
-      VALUES
-        (1, 2, 'APPROVED', TRUE, TRUE, 'SENT', 'Export completed', '2026-04-10'),
-        (2, 2, 'PENDING', NULL, NULL, NULL, NULL, NULL)`,
-  },
-  {
-    label: "SEED export_request_items",
-    sql: `INSERT INTO export_request_items (id, export_request_id, medicine_id, quantity)
-      VALUES
-        (1, 1, 1, 100),
-        (2, 1, 2, 50),
-        (3, 2, 3, 200)`,
-  },
-  {
-    label: "SEED inventory_logs",
-    sql: `INSERT INTO inventory_logs (id, medicine_id, batch_id, change_amount, type, ref_id, ref_type, note)
-      VALUES
-        (1, 1, 1, -100, 'EXPORT', 1, 'EXPORT_REQUEST', 'Export for request 1'),
-        (2, 2, 2, -50, 'EXPORT', 1, 'EXPORT_REQUEST', 'Export for request 1'),
-        (3, 3, 3, 800, 'IMPORT', 1, 'IMPORT_REQUEST', 'Initial import')`,
-  },
 ];
 
 const schemaMigrations = [
@@ -231,10 +168,6 @@ const schemaMigrations = [
   {
     label: "ADD batches.cabinet_is_full",
     sql: "ALTER TABLE batches ADD COLUMN cabinet_is_full TINYINT(1) DEFAULT 0",
-  },
-  {
-    label: "ADD medicines.storage_type",
-    sql: "ALTER TABLE medicines ADD COLUMN storage_type ENUM('NORMAL','COOL','COLD','SPECIAL') DEFAULT 'NORMAL'",
   },
   {
     label: "ADD medicines.min_stock",
@@ -399,7 +332,6 @@ async function hasExistingSeedData(connection) {
   const tables = [
     "users",
     "medicines",
-    "warehouses",
     "batches",
     "import_requests",
     "export_requests",

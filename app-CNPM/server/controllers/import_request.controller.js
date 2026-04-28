@@ -34,14 +34,13 @@ exports.create = async (req, res) => {
 // PATCH /api/import-requests/:id/receive
 exports.receive = async (req, res) => {
   try {
-    const { batch_code, quantity, warehouse_id, expiry_date, status, note, position } = req.body;
+    const { batch_code, quantity, expiry_date, status, note, position } = req.body;
     if (!batch_code || !quantity || !expiry_date) {
       return res.status(400).json({ message: "Thiếu thông tin lô hàng" });
     }
     const batchId = await ImportRequest.receive(req.params.id, {
       batch_code,
       quantity,
-      warehouse_id: warehouse_id || 1,
       expiry_date,
       status,
       note,

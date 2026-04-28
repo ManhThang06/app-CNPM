@@ -7,10 +7,9 @@ router.get("/", async (req, res) => {
   try {
     const { medicine_id } = req.query;
     let sql = `
-      SELECT b.*, m.name AS medicine_name, w.name AS warehouse_name
+      SELECT b.*, m.name AS medicine_name
       FROM batches b
       JOIN medicines m ON m.id = b.medicine_id
-      LEFT JOIN warehouses w ON w.id = b.warehouse_id
       WHERE b.quantity > 0
     `;
     const params = [];

@@ -13,7 +13,7 @@ type Summary = {
   totalBatches: number;
   nearExpiryCount: number;
   expiredCount: number;
-  warehouseCapacity: Record<string, number>;
+  totalStock: number;
 };
 
 type QuickAction = {
@@ -148,9 +148,7 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const totalCapacity = summary
-    ? Object.values(summary.warehouseCapacity).reduce((sum, value) => sum + value, 0)
-    : 0;
+
 
   return (
     <div className="page animate-fade-in">
@@ -174,21 +172,21 @@ export default function DashboardPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 20 }}>
           <MetricCard
             label={t("dashboard.totalSkus")}
-            value={summary?.totalSkus ?? "-"}
+            value={summary?.totalSkus ?? 0}
             icon="inventory_2"
             color="var(--primary)"
             trend={{ up: true, label: t("dashboard.skuManaged") }}
           />
           <MetricCard
             label={t("dashboard.totalBatches")}
-            value={summary?.totalBatches ?? "-"}
+            value={summary?.totalBatches ?? 0}
             icon="layers"
             color="var(--secondary)"
             trend={{ up: true, label: t("dashboard.batchInStock") }}
           />
           <MetricCard
             label={t("dashboard.nearExpiry")}
-            value={summary?.nearExpiryCount ?? "-"}
+            value={summary?.nearExpiryCount ?? 0}
             icon="schedule"
             color="#F59E0B"
             borderColor="#F59E0B"
@@ -228,25 +226,13 @@ export default function DashboardPage() {
                   {t("dashboard.totalStock")}
                 </div>
                 <div className="font-headline" style={{ fontSize: "2rem", fontWeight: 800, color: "#059669", lineHeight: 1 }}>
-                  {loading ? "-" : totalCapacity.toLocaleString("vi-VN")}
+                  {loading ? "-" : (summary?.totalStock ?? 0).toLocaleString("vi-VN")}
                 </div>
               </div>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(5,150,105,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Icon name="warehouse" size={22} style={{ color: "#059669" }} />
               </div>
             </div>
-            {!loading && summary && (
-              <div style={{ marginTop: 16 }}>
-                {Object.entries(summary.warehouseCapacity).map(([warehouseId, quantity]) => (
-                  <div key={warehouseId} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "var(--on-surface-variant)", marginBottom: 4 }}>
-                    <span>{language === "vi" ? "Kho" : "Warehouse"} {warehouseId}</span>
-                    <span style={{ fontWeight: 600, color: "var(--on-surface)" }}>
-                      {quantity.toLocaleString(language === "vi" ? "vi-VN" : "en-US")} {language === "vi" ? "đơn vị" : "units"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       )}

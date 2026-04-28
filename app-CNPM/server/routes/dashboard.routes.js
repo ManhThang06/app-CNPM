@@ -23,23 +23,17 @@ router.get("/summary", async (req, res) => {
       `SELECT COUNT(*) AS expiredCount FROM batches
        WHERE expiry_date < NOW() AND quantity > 0`
     );
-
-    const [capacityRows] = await db.query(
-      `SELECT warehouse_id, SUM(quantity) AS total
-       FROM batches WHERE quantity > 0
-       GROUP BY warehouse_id`
+    
+    const [[{ totalStock }]] = await db.query(
+      `SELECT SUM(quantity) AS totalStock FROM batches WHERE quantity > 0`
     );
-    const warehouseCapacity = {};
-    for (const row of capacityRows) {
-      warehouseCapacity[row.warehouse_id] = Number(row.total);
-    }
 
     res.json({
       totalSkus: Number(totalSkus),
       totalBatches: Number(totalBatches),
       nearExpiryCount: Number(nearExpiryCount),
       expiredCount: Number(expiredCount),
-      warehouseCapacity,
+      totalStock: Number(totalStock) || 0,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
