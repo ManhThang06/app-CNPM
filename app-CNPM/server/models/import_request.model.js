@@ -43,7 +43,8 @@ const ImportRequest = {
 
   // Xác nhận nhận hàng (storekeeper): INSERT batches + UPDATE status + ghi log
   async receive(id, receiveData) {
-    const { batch_code, quantity, expiry_date, note, position, status } = receiveData;
+    const { batch_code, total_quantity, expiry_date, note, positions, status } = receiveData;
+    // positions: [{ position, quantity }]
     const conn = await db.getConnection();
     try {
       await conn.beginTransaction();
@@ -54,18 +55,24 @@ const ImportRequest = {
         [id]
       );
       if (!req) throw { status: 404, message: "Không tìm thấy yêu cầu nhập" };
+      
       const finalBatchCode =
         batch_code?.trim() || req.batch_code?.trim() || generateBatchCode(req.medicine_id);
 
-      // INSERT batch mới
-      const [batchResult] = await conn.query(
-        `INSERT INTO batches (medicine_id, batch_code, quantity, import_date, expiry_date, position)
-         VALUES (?, ?, ?, NOW(), ?, ?)`,
-        [req.medicine_id, finalBatchCode, quantity, expiry_date, position]
-      );
-      const batchId = batchResult.insertId;
+      const batchIds = [];
+      for (const pos of positions) {
+        // INSERT batch mới cho từng vị trí
+        const [batchResult] = await conn.query(
+          `INSERT INTO batches (medicine_id, batch_code, quantity, import_date, expiry_date, position)
+           VALUES (?, ?, ?, NOW(), ?, ?)`,
+          [req.medicine_id, finalBatchCode, pos.quantity, expiry_date, pos.position]
+        );
+        batchIds.push(batchResult.insertId);
+      }
 
       // UPDATE import_requests.status
+      // Lưu vị trí đầu tiên vào bảng import_requests (để tương thích hoặc tham khảo nhanh)
+      const primaryPosition = positions[0]?.position || "";
       await conn.query(
         `UPDATE import_requests
          SET status = 'RECEIVED',
@@ -74,26 +81,30 @@ const ImportRequest = {
              expiry_date = ?,
              position = ?
          WHERE id = ?`,
-        [finalBatchCode, expiry_date, position, id]
+        [finalBatchCode, expiry_date, primaryPosition, id]
       );
 
-      // Ghi inventory_log
-      await conn.query(
-        `INSERT INTO inventory_logs
-           (medicine_id, batch_id, change_amount, type, ref_id, ref_type, note)
-         VALUES (?, ?, ?, 'IMPORT', ?, 'IMPORT_REQUEST', ?)`,
-        [
-          req.medicine_id,
-          batchId,
-          quantity,
-          id,
-          (status === 'partial' ? '[Thiếu thuốc] ' : status === 'excess' ? '[Dư số lượng] ' : '') +
-          (note || `Nhập kho theo yêu cầu #${id}`),
-        ]
-      );
+      // Ghi inventory_log cho từng batch
+      for (let i = 0; i < positions.length; i++) {
+        const pos = positions[i];
+        const batchId = batchIds[i];
+        await conn.query(
+          `INSERT INTO inventory_logs
+             (medicine_id, batch_id, change_amount, type, ref_id, ref_type, note)
+           VALUES (?, ?, ?, 'IMPORT', ?, 'IMPORT_REQUEST', ?)`,
+          [
+            req.medicine_id,
+            batchId,
+            pos.quantity,
+            id,
+            (status === 'partial' ? '[Thiếu thuốc] ' : status === 'excess' ? '[Dư số lượng] ' : '') +
+            (note || `Nhập kho theo yêu cầu #${id} tại ${pos.position}`),
+          ]
+        );
+      }
 
       await conn.commit();
-      return { batchId, batchCode: finalBatchCode };
+      return { batchIds, batchCode: finalBatchCode };
     } catch (err) {
       await conn.rollback();
       throw err;

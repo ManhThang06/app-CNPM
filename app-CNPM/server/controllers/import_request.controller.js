@@ -36,17 +36,17 @@ exports.create = async (req, res) => {
 // PATCH /api/import-requests/:id/receive
 exports.receive = async (req, res) => {
   try {
-    const { batch_code, quantity, expiry_date, status, note, position } = req.body;
-    if (!quantity || !expiry_date || !position) {
-      return res.status(400).json({ message: "Thiếu thông tin lô hàng" });
+    const { batch_code, quantity, expiry_date, status, note, positions } = req.body;
+    if (!quantity || !expiry_date || !positions || !positions.length) {
+      return res.status(400).json({ message: "Thiếu thông tin lô hàng hoặc vị trí" });
     }
     const result = await ImportRequest.receive(req.params.id, {
       batch_code,
-      quantity,
+      total_quantity: quantity,
       expiry_date,
       status,
       note,
-      position,
+      positions,
     });
     res.json({ ...result, message: "Xác nhận nhận hàng thành công" });
   } catch (err) {

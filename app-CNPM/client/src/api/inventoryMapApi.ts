@@ -30,3 +30,11 @@ export const setCabinetFull = async (
     { headers: getHeaders() }
   );
 };
+
+export const moveMedicine = async (data: { batchId: number, toPosition: string, quantity: number }) => {
+  return await axios.post(`${BASE}/move`, data, { headers: getHeaders() });
+};
+
+export const adjustMedicine = async (data: { batchId: number, newQuantity: number, note?: string }) => {
+  return await axios.patch(`${BASE}/adjust`, data, { headers: getHeaders() });
+};

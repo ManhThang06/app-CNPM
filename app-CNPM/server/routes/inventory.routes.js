@@ -78,8 +78,9 @@ router.get("/map", async (req, res) => {
 // PUT /api/inventory/cabinets/:key/full ← đánh dấu đầy / bỏ đánh dấu
 router.put("/cabinets/:key/full", async (req, res) => {
   try {
+    console.log("Debug full route - user:", req.user);
     if (req.user?.role !== "STOREKEEPER") {
-      return res.status(403).json({ message: "Chỉ thủ kho mới có quyền thực hiện thao tác này" });
+      return res.status(403).json({ message: `Chỉ thủ kho mới có quyền thực hiện thao tác này. Quyền của bạn: ${req.user?.role || 'null'}` });
     }
     const key   = req.params.key;
     const isFull = req.body.is_full === true || req.body.is_full === 1;
@@ -101,5 +102,21 @@ router.put("/cabinets/:key/full", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+// POST /api/inventory/move ← dời thuốc giữa các tủ
+router.post("/move", async (req, res, next) => {
+  if (req.user?.role !== "STOREKEEPER") {
+    return res.status(403).json({ message: `Chỉ thủ kho mới có quyền thực hiện thao tác này. Quyền của bạn: ${req.user?.role || 'null'}` });
+  }
+  next();
+}, inventoryController.move);
+
+// PATCH /api/inventory/adjust ← điều chỉnh số lượng
+router.patch("/adjust", async (req, res, next) => {
+  if (req.user?.role !== "STOREKEEPER") {
+    return res.status(403).json({ message: `Chỉ thủ kho mới có quyền thực hiện thao tác này. Quyền của bạn: ${req.user?.role || 'null'}` });
+  }
+  next();
+}, inventoryController.adjust);
 
 module.exports = router;

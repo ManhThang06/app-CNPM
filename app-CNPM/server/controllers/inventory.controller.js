@@ -46,3 +46,37 @@ exports.updateMinStock = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+/**
+ * POST /api/inventory/move
+ * Dời thuốc giữa các tủ.
+ */
+exports.move = async (req, res) => {
+  try {
+    const { batchId, toPosition, quantity } = req.body;
+    if (!batchId || !toPosition || !quantity) {
+      return res.status(400).json({ message: "Thiếu thông tin để dời tủ" });
+    }
+    const result = await Inventory.move({ batchId, toPosition, quantity });
+    res.json({ message: "Dời tủ thành công", ...result });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/**
+ * PATCH /api/inventory/adjust
+ * Điều chỉnh số lượng thuốc.
+ */
+exports.adjust = async (req, res) => {
+  try {
+    const { batchId, newQuantity, note } = req.body;
+    if (batchId === undefined || newQuantity === undefined) {
+      return res.status(400).json({ message: "Thiếu thông tin điều chỉnh" });
+    }
+    await Inventory.adjust({ batchId, newQuantity, note });
+    res.json({ message: "Điều chỉnh số lượng thành công" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

@@ -104,25 +104,56 @@ export default function ImportRequestPage() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!selected) return;
+  const [positions, setPositions] = useState<{ position: string; quantity: number }[]>([]);
+  
+  const handleAddPosition = () => {
     const posKey = `F${floor}-${room}-${cabinet}`;
-    if (!expiryDate) {
-      alert("Vui lòng nhập hạn sử dụng.");
-      return;
-    }
     if (fullPositions.includes(posKey)) {
       alert("Vị trí này đã được đánh dấu là đầy! Vui lòng chọn vị trí khác.");
       return;
     }
+    if (positions.find(p => p.position === posKey)) {
+      alert("Vị trí này đã được chọn!");
+      return;
+    }
+    setPositions([...positions, { position: posKey, quantity: 0 }]);
+  };
+
+  const handleRemovePosition = (index: number) => {
+    setPositions(positions.filter((_, i) => i !== index));
+  };
+
+  const handlePositionQuantityChange = (index: number, qty: number) => {
+    const newPositions = [...positions];
+    newPositions[index].quantity = qty;
+    setPositions(newPositions);
+  };
+
+  const handleSubmit = async () => {
+    if (!selected) return;
+    if (!expiryDate) {
+      alert("Vui lòng nhập hạn sử dụng.");
+      return;
+    }
+    if (positions.length === 0) {
+      alert("Vui lòng chọn ít nhất một vị trí lưu trữ.");
+      return;
+    }
+
+    const totalAllocated = positions.reduce((sum, p) => sum + p.quantity, 0);
+    if (totalAllocated !== quantity) {
+      alert(`Tổng số lượng ở các tủ (${totalAllocated}) phải bằng số lượng thực nhận (${quantity}).`);
+      return;
+    }
+
     try {
       const res = await receiveImportRequest(selected.id, {
         batch_code: selected.batch_code,
-        quantity: quantity || selected.quantity || 1,
-        position: posKey,
+        quantity: quantity,
         expiry_date: expiryDate,
         status,
         note,
+        positions: positions,
       });
       const batchCode = res.data?.batchCode || selected.batch_code;
       // Cập nhật UI local
@@ -134,6 +165,7 @@ export default function ImportRequestPage() {
       setNote("");
       setQuantity(0);
       setExpiryDate("");
+      setPositions([]);
       alert("Xác nhận nhận hàng thành công!");
     } catch (err: any) {
       alert(err.response?.data?.message || "Lỗi khi xác nhận nhận hàng");
@@ -271,10 +303,32 @@ export default function ImportRequestPage() {
                         );
                       })}
                     </select>
+                    <button className="btn btn-secondary" onClick={handleAddPosition} type="button">
+                      <Icon name="add" size={16} /> Thêm tủ
+                    </button>
                   </div>
-                  <span style={{ fontSize: "0.72rem", color: "var(--on-surface-variant)" }}>
-                    Đang chọn {getWarehouseByFloor(floor).shortName}; vị trí: {selectedPosition}
-                  </span>
+                  
+                  {/* Selected positions list */}
+                  <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                    {positions.map((p, idx) => (
+                      <div key={idx} style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--surface-container-high)", padding: "8px 12px", borderRadius: 8 }}>
+                        <span style={{ fontWeight: 700, flex: 1 }}>{p.position}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <label className="text-label-sm">SL:</label>
+                          <input 
+                            type="number" 
+                            min={1} 
+                            style={{ width: 80, padding: "4px 8px" }} 
+                            value={p.quantity} 
+                            onChange={(e) => handlePositionQuantityChange(idx, Number(e.target.value))} 
+                          />
+                        </div>
+                        <button className="btn btn-ghost" style={{ color: "var(--error)", padding: 4 }} onClick={() => handleRemovePosition(idx)}>
+                          <Icon name="delete" size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
